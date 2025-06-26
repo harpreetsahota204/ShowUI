@@ -168,31 +168,49 @@ class ShowUIModel(SamplesMixin, Model):
     def media_type(self):
         return "image"
 
+
     def _to_keypoints(self, output_text: str) -> fo.Keypoints:
         """Convert model output text to FiftyOne Keypoints."""
         keypoints = []
         
-        if self.operation == "simple_grounding":
-            # Parse '[0.14, 0.53]'
-            x, y = ast.literal_eval(output_text)
-            
-            keypoint = fo.Keypoint(
-                label="grounding_point",
-                points=[[x, y]]
-            )
-            keypoints.append(keypoint)
-            
-        elif self.operation == "action_grounding":
-            # Parse {'action': 'CLICK', 'value': 'element', 'position': [x,y]}
-            action_dict = ast.literal_eval(output_text)
-            x, y = action_dict['position']
-            
-            keypoint = fo.Keypoint(
-                label=action_dict['action'],
-                points=[[x, y]],
-                action_value=action_dict['value']
-            )
-            keypoints.append(keypoint)
+        try:
+            if self.operation == "simple_grounding":
+                # Parse '[0.14, 0.53]'
+                coords = ast.literal_eval(output_text)
+                if coords and len(coords) >= 2:
+                    x, y = coords[0], coords[1]
+                    
+                    keypoint = fo.Keypoint(
+                        label="grounding_point",
+                        points=[[x, y]]
+                    )
+                    keypoints.append(keypoint)
+                
+            elif self.operation == "action_grounding":
+                # Parse {'action': 'CLICK', 'value': 'element', 'position': [x,y]}
+                action_dict = ast.literal_eval(output_text)
+                
+                # Handle case where it might not be a dict
+                if not isinstance(action_dict, dict):
+                    print(f"Expected dict but got {type(action_dict)}: {action_dict}")
+                    return fo.Keypoints(keypoints=[])
+                
+                position = action_dict.get('position')
+                if position and len(position) >= 2:
+                    x, y = position[0], position[1]
+                    
+                    keypoint = fo.Keypoint(
+                        label=action_dict.get('action', 'unknown'),
+                        points=[[x, y]],
+                        action_value=action_dict.get('value')
+                    )
+                    keypoints.append(keypoint)
+                else:
+                    print(f"Invalid or missing position: {position}")
+                    
+        except Exception as e:
+            print(f"Error parsing output '{output_text}': {e}")
+            return fo.Keypoints(keypoints=[])
         
         return fo.Keypoints(keypoints=keypoints)
     
@@ -274,6 +292,7 @@ class ShowUIModel(SamplesMixin, Model):
             skip_special_tokens=True, 
             clean_up_tokenization_spaces=False
         )[0]
+        print(f"Model output: '{output_text}' for operation: {self.operation}")
 
         return self._to_keypoints(output_text)
 
