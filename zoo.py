@@ -170,19 +170,20 @@ class ShowUIModel(SamplesMixin, Model):
 
     def _to_keypoints(self, output_text: str, image_width: int, image_height: int) -> fo.Keypoints:
         """Convert model output text to FiftyOne Keypoints."""
+        keypoints = []
         
         if self.operation == "simple_grounding":
-                # Parse '[0.14, 0.53]'
-                x, y = ast.literal_eval(output_text)
-                
-                keypoint = fo.Keypoint(
-                    label="grounding_point",
-                    points=[[x, y]]
-                )
+            # Parse '[0.14, 0.53]'
+            x, y = ast.literal_eval(output_text)
+            
+            keypoint = fo.Keypoint(
+                label="grounding_point",
+                points=[[x, y]]
+            )
+            keypoints.append(keypoint)
             
         elif self.operation == "action_grounding":
             # Parse {'action': 'CLICK', 'value': 'element', 'position': [x,y]}
-           
             action_dict = ast.literal_eval(output_text)
             x, y = action_dict['position']
             
@@ -191,8 +192,9 @@ class ShowUIModel(SamplesMixin, Model):
                 points=[[x, y]],
                 action_value=action_dict['value']
             )
+            keypoints.append(keypoint)
         
-        return fo.Keypoints(keypoints=[keypoint])
+        return fo.Keypoints(keypoints=keypoints)
     
     def _predict(self, image: Image.Image, sample=None) -> fo.Keypoints:
         """Process a single image through the model and return keypoint predictions.
