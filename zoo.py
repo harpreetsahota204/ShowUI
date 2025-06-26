@@ -168,7 +168,6 @@ class ShowUIModel(SamplesMixin, Model):
     def media_type(self):
         return "image"
 
-
     def _to_keypoints(self, output_text: str) -> fo.Keypoints:
         """Convert model output text to FiftyOne Keypoints."""
         keypoints = []
@@ -224,21 +223,21 @@ class ShowUIModel(SamplesMixin, Model):
             if action.upper() == 'SCROLL':
                 # Place scroll actions on the far right middle of screen
                 return fo.Keypoint(
-                    label=action.lower(),
+                    label=action,
                     points=[[0.95, 0.5]],
                     action_value=value
                 )
             elif action.upper() == 'ANSWER':
                 # Place answer actions in the center of screen
                 return fo.Keypoint(
-                    label=action.lower(),
+                    label=action,
                     points=[[0.5, 0.5]],
                     action_value=value
                 )
             elif action.upper() in ['ENTER', 'COPY']:
                 # Other actions without position - center of screen
                 return fo.Keypoint(
-                    label=action.lower(),
+                    label=action,
                     points=[[0.5, 0.5]],
                     action_value=value
                 )
@@ -250,7 +249,7 @@ class ShowUIModel(SamplesMixin, Model):
                 x1, y1 = position[0]
                 x2, y2 = position[1]
                 return fo.Keypoint(
-                    label=action.lower(),
+                    label=action,
                     points=[[x1, y1], [x2, y2]],
                     action_value=value
                 )
@@ -258,7 +257,7 @@ class ShowUIModel(SamplesMixin, Model):
                 # Regular format: [x, y]
                 x, y = position[0], position[1]
                 return fo.Keypoint(
-                    label=action.lower(),
+                    label=action,
                     points=[[x, y]],
                     action_value=value
                 )
@@ -344,7 +343,6 @@ class ShowUIModel(SamplesMixin, Model):
             skip_special_tokens=True, 
             clean_up_tokenization_spaces=False
         )[0]
-        print(f"Model output: '{output_text}' for operation: {self.operation}")
 
         return self._to_keypoints(output_text)
 
