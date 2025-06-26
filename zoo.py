@@ -168,7 +168,7 @@ class ShowUIModel(SamplesMixin, Model):
     def media_type(self):
         return "image"
 
-    def _to_keypoints(self, output_text: str, image_width: int, image_height: int) -> fo.Keypoints:
+    def _to_keypoints(self, output_text: str) -> fo.Keypoints:
         """Convert model output text to FiftyOne Keypoints."""
         keypoints = []
         
@@ -274,6 +274,8 @@ class ShowUIModel(SamplesMixin, Model):
             skip_special_tokens=True, 
             clean_up_tokenization_spaces=False
         )[0]
+
+        return self._to_keypoints(output_text)
 
     def predict(self, image, sample=None):
         """Process an image with the model.
