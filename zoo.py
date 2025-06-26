@@ -187,32 +187,84 @@ class ShowUIModel(SamplesMixin, Model):
                     keypoints.append(keypoint)
                 
             elif self.operation == "action_grounding":
-                # Parse {'action': 'CLICK', 'value': 'element', 'position': [x,y]}
-                action_dict = ast.literal_eval(output_text)
-                
-                # Handle case where it might not be a dict
-                if not isinstance(action_dict, dict):
-                    print(f"Expected dict but got {type(action_dict)}: {action_dict}")
-                    return fo.Keypoints(keypoints=[])
-                
-                position = action_dict.get('position')
-                if position and len(position) >= 2:
-                    x, y = position[0], position[1]
-                    
-                    keypoint = fo.Keypoint(
-                        label=action_dict.get('action', 'unknown'),
-                        points=[[x, y]],
-                        action_value=action_dict.get('value')
-                    )
-                    keypoints.append(keypoint)
+                # Handle multiple actions in one output (comma-separated)
+                if '},{' in output_text:
+                    # Split multiple actions and process each
+                    actions_text = output_text.replace('},{', '}|{').split('|')
+                    for action_text in actions_text:
+                        action_dict = ast.literal_eval(action_text)
+                        keypoint = self._create_action_keypoint(action_dict)
+                        if keypoint:
+                            keypoints.append(keypoint)
                 else:
-                    print(f"Invalid or missing position: {position}")
+                    # Single action
+                    action_dict = ast.literal_eval(output_text)
+                    keypoint = self._create_action_keypoint(action_dict)
+                    if keypoint:
+                        keypoints.append(keypoint)
                     
         except Exception as e:
             print(f"Error parsing output '{output_text}': {e}")
             return fo.Keypoints(keypoints=[])
         
         return fo.Keypoints(keypoints=keypoints)
+
+    def _create_action_keypoint(self, action_dict):
+        """Create a keypoint from an action dictionary."""
+        if not isinstance(action_dict, dict):
+            print(f"Expected dict but got {type(action_dict)}: {action_dict}")
+            return None
+        
+        action = action_dict.get('action', 'unknown')
+        value = action_dict.get('value')
+        position = action_dict.get('position')
+        
+        # Handle actions without positions with default locations
+        if position is None:
+            if action.upper() == 'SCROLL':
+                # Place scroll actions on the far right middle of screen
+                return fo.Keypoint(
+                    label=action.lower(),
+                    points=[[0.95, 0.5]],
+                    action_value=value
+                )
+            elif action.upper() == 'ANSWER':
+                # Place answer actions in the center of screen
+                return fo.Keypoint(
+                    label=action.lower(),
+                    points=[[0.5, 0.5]],
+                    action_value=value
+                )
+            elif action.upper() in ['ENTER', 'COPY']:
+                # Other actions without position - center of screen
+                return fo.Keypoint(
+                    label=action.lower(),
+                    points=[[0.5, 0.5]],
+                    action_value=value
+                )
+        
+        # Handle different position formats
+        if position:
+            if isinstance(position[0], list):
+                # SWIPE/SELECT_TEXT format: [[x1,y1], [x2,y2]]
+                x1, y1 = position[0]
+                x2, y2 = position[1]
+                return fo.Keypoint(
+                    label=action.lower(),
+                    points=[[x1, y1], [x2, y2]],
+                    action_value=value
+                )
+            else:
+                # Regular format: [x, y]
+                x, y = position[0], position[1]
+                return fo.Keypoint(
+                    label=action.lower(),
+                    points=[[x, y]],
+                    action_value=value
+                )
+        else:
+            print(f"Invalid or missing position for action {action}: {position}")
+            return None
     
     def _predict(self, image: Image.Image, sample=None) -> fo.Keypoints:
         """Process a single image through the model and return keypoint predictions.
