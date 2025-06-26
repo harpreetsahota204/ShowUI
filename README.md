@@ -8,6 +8,8 @@ This repository provides a FiftyOne model integration for ShowUI, a vision-langu
 - **Action Grounding**: Determine specific actions to take on UI elements
 - **FiftyOne Integration**: Seamless integration with FiftyOne datasets and workflows
 - **GPU Quantization Support**: Optional 4-bit quantization for CUDA devices
+- **Multi-Action Support**: Handles multiple actions in a single output
+- **Smart Position Handling**: Automatic positioning for actions without explicit coordinates
 
 ## Installation
 
@@ -110,10 +112,24 @@ dataset.apply_model(
 
 ## FiftyOne Integration
 
-The model outputs are automatically converted to FiftyOne Keypoints:
+The model outputs are automatically converted to FiftyOne Keypoints with intelligent positioning:
 
+### Standard Actions
 - **Simple Grounding**: Creates keypoints with label "grounding_point"
-- **Action Grounding**: Creates keypoints with action-specific labels (e.g., "click", "input") and includes the action value
+- **Actions with positions**: Creates keypoints with action-specific labels (e.g., "click", "input") and includes the action value
+
+### Special Position Handling
+- **SCROLL actions**: Automatically positioned at `[0.95, 0.5]` (far right, middle of screen)
+- **ANSWER actions**: Automatically positioned at `[0.5, 0.5]` (center of screen)
+- **ENTER/COPY actions**: Positioned at `[0.5, 0.5]` (center of screen)
+- **SWIPE/SELECT_TEXT actions**: Support dual coordinates `[[x1,y1], [x2,y2]]` for start/end positions
+
+### Multi-Action Support
+The integration automatically handles multiple actions in a single output, such as:
+```
+{'action': 'CLICK', 'value': None, 'position': [0.14, 0.1]},{'action': 'INPUT', 'value': '10023', 'position': [0.14, 0.1]}
+```
+Each action is converted to a separate keypoint.
 
 ## Configuration Options
 
@@ -153,24 +169,32 @@ session = fo.launch_app(dataset)
 
 ## Action Types Supported
 
-1. **CLICK**: Click on an element
-2. **INPUT**: Type text into an element  
-3. **SELECT**: Select a value for an element
-4. **HOVER**: Hover over an element
-5. **ANSWER**: Answer a question
-6. **ENTER**: Perform enter operation
-7. **SCROLL**: Scroll the screen
-8. **SELECT_TEXT**: Select text content
-9. **COPY**: Copy text
-10. **SWIPE**: Swipe on mobile screens
-11. **TAP**: Tap on mobile elements
+1. **CLICK**: Click on an element - position `[x,y]`
+2. **INPUT**: Type text into an element - position `[x,y]`, value contains text
+3. **SELECT**: Select a value for an element - position `[x,y]`
+4. **HOVER**: Hover over an element - position `[x,y]`
+5. **ANSWER**: Answer a question - position auto-set to `[0.5, 0.5]`, value contains answer
+6. **ENTER**: Perform enter operation - position auto-set to `[0.5, 0.5]`
+7. **SCROLL**: Scroll the screen - position auto-set to `[0.95, 0.5]`, value contains direction
+8. **SELECT_TEXT**: Select text content - position `[[x1,y1], [x2,y2]]` for start/end
+9. **COPY**: Copy text - position auto-set to `[0.5, 0.5]`, value contains text to copy
+10. **SWIPE**: Swipe on mobile screens - position `[[x1,y1], [x2,y2]]` for start/end
+11. **TAP**: Tap on mobile elements - position `[x,y]`
+
+## Position Formats
+
+- **Single Point**: `[x, y]` - Most actions (CLICK, INPUT, SELECT, HOVER, TAP)
+- **Dual Points**: `[[x1,y1], [x2,y2]]` - Range actions (SWIPE, SELECT_TEXT)
+- **Auto-Positioned**: Actions without explicit coordinates get smart default positions
+- **None**: Some actions legitimately have no position, handled automatically
 
 ## Notes
 
 - All coordinates are normalized to [0,1] range
 - Position coordinates represent relative locations on the screenshot
-- For action grounding, positions may be single points `[x,y]` or ranges `[[x1,y1], [x2,y2]]`
+- Actions without positions are automatically given meaningful default locations for visualization
 - The model supports both web and mobile UI screenshots
+- Multiple actions in a single output are automatically parsed and separated
 
 # Citation
 
