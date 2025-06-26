@@ -2,6 +2,8 @@
 
 This repository provides a FiftyOne model integration for ShowUI, a vision-language model designed for GUI understanding and interaction. ShowUI can perform two main operations: simple grounding (locating UI elements) and action grounding (determining actions to take on UI elements).
 
+<img src="showui-hd.gif">
+
 ## Features
 
 - **Simple Grounding**: Locate UI elements based on text descriptions
