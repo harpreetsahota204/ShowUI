@@ -1,0 +1,32 @@
+{
+    "name": "ShowUI",
+    "url": "https://github.com/harpreetsahota204/ShowUI",
+    "models": [
+        {
+            "base_name": "showlab/ShowUI-2B",
+            "base_filename":"ShowUI-2B",
+            "author": "Show Lab",
+            "license": "MIT",
+            "source": "https://huggingface.co/showlab/ShowUI-2B",
+            "description": "ShowUI is a lightweight (2B) vision-language-action model designed for GUI agents.",
+            "tags": [
+                "detection",
+                "ocr",
+                "VLM",
+                "classification",
+                "zero-shot",
+                "visual-agent"
+            ],
+            "date_added": "2025-06-26",
+            "requirements": {
+                "packages": ["huggingface-hub","transformers", "torch", "torchvision", "qwen-vl-utils", "accelerate"],
+                "cpu": {
+                    "support": true
+                },
+                "gpu": {
+                    "support": true
+                }
+            }
+        }
+    ]
+}
