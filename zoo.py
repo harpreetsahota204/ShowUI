@@ -78,6 +78,7 @@ class ShowUIModel(SamplesMixin, Model):
         self._operation = operation
         self.model_path = model_path
         self.prompt = prompt
+        self.quantized = quantized
         self._custom_system_prompt = system_prompt  # Store custom system prompt if provided
         self.device = get_device()
         logger.info(f"Using device: {self.device}")
